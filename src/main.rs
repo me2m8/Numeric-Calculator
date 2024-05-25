@@ -5,35 +5,13 @@
 
 use std::{io, io::Write};
 
-#[derive(Debug)]
-enum Token {
-    Number(i32),
-    Operator(Operator),
-    Bracket(Bracket),
-}
-
-#[derive(Debug)]
-enum Operator {
-    Plus,
-    Minus,
-    Multiply,
-    Divide,
-}
-
-#[derive(Debug)]
-enum Bracket {
-    Lparen,
-    Rparen,
-    Lsquare,
-    Rsquare,
-    Lsquiggly,
-    Rsquiggly,
-}
+mod tokenize;
+mod expression;
 
 fn main() -> io::Result<()> {
     let input = get_input("Enter the expression: ")?;
 
-    let tokens = parse_expression(&input);
+    let tokens = tokenize::parse_expression(&input);
 
     dbg!(tokens);
 
@@ -51,41 +29,12 @@ fn get_input(query: &str) -> Result<String, io::Error> {
     Ok(buffer)
 }
 
-fn parse_expression(expression: &str) -> Vec<Token> {
-    let mut tokens = Vec::new();
-
-    let mut num = String::new();
-
-    for c in expression.chars() {
-        if let '0'..='9' = c {
-            num.push(c);
-            continue
-        }
-
-        if !num.is_empty() {
-            let n = num.parse::<i32>().unwrap();
-            tokens.push(Token::Number(n));
-            num.clear();
-        }
-
-        match c {
-            '+' => tokens.push(Token::Operator(Operator::Plus)),
-            '-' => tokens.push(Token::Operator(Operator::Minus)),
-            '*' => tokens.push(Token::Operator(Operator::Multiply)),
-            '/' => tokens.push(Token::Operator(Operator::Divide)),
-            '(' => tokens.push(Token::Bracket(Bracket::Lparen)),
-            ')' => tokens.push(Token::Bracket(Bracket::Rparen)),
-            '[' => tokens.push(Token::Bracket(Bracket::Lsquare)),
-            ']' => tokens.push(Token::Bracket(Bracket::Rsquare)),
-            '{' => tokens.push(Token::Bracket(Bracket::Lsquiggly)),
-            '}' => tokens.push(Token::Bracket(Bracket::Rsquiggly)),
-            _ => (),
-        }
-    }
-
-    tokens
-}
-
 // 2 + 3 * 4 * 5
 
-// 4 + 5 * (1 + 2 * 3 + 4)
+// 4 + 5 * (1 + 2 * 3 + 4) + 6
+//
+// 4 +                     + 6
+//     5 *                
+//         (             )
+//          1 +       + 4
+//              2 * 3
