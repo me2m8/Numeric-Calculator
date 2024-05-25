@@ -1,3 +1,8 @@
+use crate::errors::EvalError;
+
+
+static ALLOWED_CHARS: &str = "0123456789.+-*/() \0";
+
 /// Enum representing a symbol/token in the expression
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
@@ -31,7 +36,7 @@ pub enum Multiplicative {
 
 /// Parses the expression string into an an array of tokens, representing numbers, operators and
 /// expressions inside parentheses
-pub fn parse_expression(expression: &str) -> Vec<Token> {
+pub fn parse_expression(expression: &str) -> Result<Vec<Token>, EvalError> {
     // A space is appended at the end so that the end doesnt end abruptly, allowing numbers to be
     // properly parsed. 
     let expression = String::from(expression) + "\0";
@@ -45,9 +50,13 @@ pub fn parse_expression(expression: &str) -> Vec<Token> {
     let mut num = String::new();
 
     for c in expression.chars() {
+        if !ALLOWED_CHARS.contains(c) {
+            return Err(EvalError::InvalidCharacter(c))
+        }
+
         // If a number has been found, add the char to the num vec and continue.
         // Repeat until another symbol is found to get the entire number.
-        if let '0'..='9' = c {
+        if let '0'..='9' | '.' = c {
             num.push(c);
             continue;
         }
@@ -108,7 +117,7 @@ pub fn parse_expression(expression: &str) -> Vec<Token> {
     }
 
     // Return the list of tokens. 
-    expr_stack.pop().unwrap()
+    Ok(expr_stack.pop().unwrap())
 }
 
 #[cfg(test)]
@@ -118,9 +127,9 @@ mod tests {
     #[test]
     fn parse_numbers() {
         let expression_1 = "123 456";
-        let tokens_1 = parse_expression(expression_1);
+        let tokens_1 = parse_expression(expression_1).unwrap();
         let expression_2 = "7 45193";
-        let tokens_2 = parse_expression(expression_2);
+        let tokens_2 = parse_expression(expression_2).unwrap();
 
         assert_eq!(tokens_1, vec![Token::Number(123.0), Token::Number(456.0)]);
         assert_eq!(tokens_2, vec![Token::Number(7.0), Token::Number(45193.0)]);
@@ -129,7 +138,7 @@ mod tests {
     #[test]
     fn parse_additive() {
         let expression = "+ -";
-        let tokens = parse_expression(expression);
+        let tokens = parse_expression(expression).unwrap();
 
         assert_eq!(
             tokens,
@@ -143,7 +152,7 @@ mod tests {
     #[test]
     fn parse_multiplicative() {
         let expression = "* /";
-        let tokens = parse_expression(expression);
+        let tokens = parse_expression(expression).unwrap();
 
         assert_eq!(
             tokens,
@@ -157,7 +166,7 @@ mod tests {
     #[test]
     fn parse_parentheses() {
         let expression = "()";
-        let tokens = parse_expression(expression);
+        let tokens = parse_expression(expression).unwrap();
 
         assert_eq!(tokens, vec![Token::InnerExpression(vec![])]);
     }
@@ -165,7 +174,7 @@ mod tests {
     #[test]
     fn parse_additive_compound() {
         let expression = "123 + 456 - 789";
-        let tokens = parse_expression(expression);
+        let tokens = parse_expression(expression).unwrap();
 
         assert_eq!(
             tokens,
@@ -182,7 +191,7 @@ mod tests {
     #[test]
     fn parse_multiplicative_compound() {
         let expression = "123 * 456 / 789";
-        let tokens = parse_expression(expression);
+        let tokens = parse_expression(expression).unwrap();
 
         assert_eq!(
             tokens,
@@ -199,7 +208,7 @@ mod tests {
     #[test]
     fn parse_parentheses_compound() {
         let expression = "123 * (456 + 789)";
-        let tokens = parse_expression(expression);
+        let tokens = parse_expression(expression).unwrap();
 
         assert_eq!(
             tokens,
@@ -218,7 +227,7 @@ mod tests {
     #[test]
     fn parse_parentheses_unopened() {
         let expression = "123 + 456) * 789";
-        let tokens = parse_expression(expression);
+        let tokens = parse_expression(expression).unwrap();
 
         assert_eq!(
             tokens,
@@ -237,7 +246,7 @@ mod tests {
     #[test]
     fn parse_parentheses_unclosed() {
         let expression = "123 * (456 + 789";
-        let tokens = parse_expression(expression);
+        let tokens = parse_expression(expression).unwrap();
 
         assert_eq!(
             tokens,
