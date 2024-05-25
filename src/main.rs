@@ -5,40 +5,41 @@
 
 use std::{io, io::Write};
 
+use crate::eval::evaluate_ast;
+
 mod tokenize;
 mod ast;
+mod eval;
 
 fn main() -> io::Result<()> {
-    let input = get_input("Enter the expression: ")?;
+    while let Ok(input) = get_input("Enter an expression: ") {
+        if input.is_empty() {
+            break
+        }
 
-    let tokens = tokenize::parse_expression(&input);
-
-    dbg!(&tokens);
-
-    let ast = ast::get_ast(&tokens);
-
-    dbg!(ast.root);
+        let result = evaluate_expression(&input);
+        println!("Your expression evaluated to: {result}");
+    }
 
     Ok(())
 }
 
+/// Helper function to get input from stdin with a query.
 fn get_input(query: &str) -> Result<String, io::Error> {
     let mut buffer = String::new();
 
     print!("{query}");
     io::stdout().flush()?;
 
-    io::stdin().read_line(&mut buffer).unwrap();
-
+    io::stdin().read_line(&mut buffer)?;
+    
     Ok(buffer)
 }
 
-// 2 + 3 * 4 * 5
+/// Evaluates the given expression
+fn evaluate_expression(expr: &str) -> f64 {
+    let tokens = tokenize::parse_expression(expr);
+    let ast = ast::get_ast(&tokens);
+    evaluate_ast(ast)
+}
 
-// 4 + 5 * (1 + 2 * 3 + 4) + 6
-//
-// 4 +                     + 6
-//     5 *                
-//         (             )
-//          1 +       + 4
-//              2 * 3

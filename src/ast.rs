@@ -1,12 +1,6 @@
 use crate::tokenize::*;
 
-#[derive(Debug)]
-pub struct Expression {
-    pub raw: String,
-    pub tokens: Vec<Token>,
-    pub ast: Option<ASTNode>,
-}
-
+// The Abstract Syntax Tree represent the order of operations. Operators farther down will be evaluated first.
 #[derive(Debug, Clone)]
 pub struct ASTNode {
     pub token: Token,
@@ -14,22 +8,30 @@ pub struct ASTNode {
     pub right: Option<Box<ASTNode>>,
 }
 
-#[allow(clippy::upper_case_acronyms)]
-#[derive(Debug, Clone)]
-pub struct AST {
-    pub root: ASTNode,
+impl ASTNode {
+    pub fn pop_left(&mut self) -> Option<Box<ASTNode>> {
+        self.left.take()
+    }
+
+    pub fn pop_right(&mut self) -> Option<Box<ASTNode>> {
+        self.right.take()
+    }
 }
 
-pub fn get_ast(tokens: &[Token]) -> AST {
-    let root = construct_ast(tokens);
-    AST { root }
+/// creates the AST from the tokens.
+pub fn get_ast(tokens: &[Token]) -> ASTNode {
+    construct_ast(tokens)
 }
 
+/// Recursively prases the tokens into the AST. 
 fn construct_ast(tokens: &[Token]) -> ASTNode {
+    // Base cases
     match tokens.len() {
+        // This is only possible in the case you have a leading or trailing operator.
         0 => {
             panic!("Invalid expression");
         }
+        // If there is only one token left, its either an inner expression or a number.
         1 => {
             return match &tokens[0] {
                 Token::Number(n) => ASTNode {
@@ -44,6 +46,8 @@ fn construct_ast(tokens: &[Token]) -> ASTNode {
                 }
             }
         }
+        // If there are 2 tokens left, the only valid pair is a number followed by a parenthesised
+        // expression.
         2 => {
             if let (Token::Number(n), Token::InnerExpression(expr)) = (&tokens[0], &tokens[1]) {
                 let left = Some(Box::new(ASTNode {
@@ -64,6 +68,7 @@ fn construct_ast(tokens: &[Token]) -> ASTNode {
         _ => {}
     };
 
+    // Additive operators are placed into the AST first, which means they'll be evaluated last. 
     if let Some((i, Token::Operator(Operator::Additive(op)))) = tokens
         .iter()
         .enumerate()
@@ -78,6 +83,7 @@ fn construct_ast(tokens: &[Token]) -> ASTNode {
         };
     }
 
+    // Multiplicative operators are placed into the AST last which means they'll be evaluated first
     if let Some((i, Token::Operator(Operator::Multiplicative(op)))) = tokens
         .iter()
         .enumerate()
@@ -92,6 +98,7 @@ fn construct_ast(tokens: &[Token]) -> ASTNode {
         };
     }
 
+    // This should be impossible
     dbg!(tokens);
-    panic!("Invalid expression")
+    unreachable!("Invalid expression")
 }
