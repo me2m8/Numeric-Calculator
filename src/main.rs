@@ -24,7 +24,7 @@ fn main() -> io::Result<()> {
         match result {
             Ok(result) => println!("Your expression evaluated to: {}", result),
             Err(EvalError::InvalidExpression) => println!("Invalid expression, please try again."),
-            Err(EvalError::InvalidCharacter(c)) => println!("Invalid character: {}", c),
+            Err(EvalError::InvalidCharacter(c)) => println!("Invalid character: {:#?}", c),
         }
     }
 
@@ -41,7 +41,7 @@ fn get_input(query: &str) -> Result<String, io::Error> {
     io::stdin().read_line(&mut buffer)?;
 
     // Remove the newline character from the end of the buffer and return the string
-    Ok(buffer.strip_suffix('\n').unwrap_or(&buffer).to_string())
+    Ok(buffer)
 }
 
 /// Evaluates the given expression

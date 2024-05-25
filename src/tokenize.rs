@@ -1,7 +1,7 @@
 use crate::errors::EvalError;
 
-
-static ALLOWED_CHARS: &str = "0123456789.+-*/() \0";
+/// A string containing all the allowed characters in the expression.
+static ALLOWED_CHARS: &str = "0123456789.+-*/() \n";
 
 /// Enum representing a symbol/token in the expression
 #[derive(Debug, Clone, PartialEq)]
@@ -37,9 +37,10 @@ pub enum Multiplicative {
 /// Parses the expression string into an an array of tokens, representing numbers, operators and
 /// expressions inside parentheses
 pub fn parse_expression(expression: &str) -> Result<Vec<Token>, EvalError> {
-    // A space is appended at the end so that the end doesnt end abruptly, allowing numbers to be
-    // properly parsed. 
-    let expression = String::from(expression) + "\0";
+    // A newline is appended at the end so that the end doesnt end abruptly, allowing numbers to be
+    // properly parsed. There is usually a newline at the end of the input, but if there isn't, this
+    // will make sure that the expression is properly parsed.
+    let expression = String::from(expression) + "\n";
 
     // the expression stack is used to keep track of the current scope. expressions inside parentheses
     // are parsed into their own token to make constructing the ast easier. 
@@ -49,8 +50,9 @@ pub fn parse_expression(expression: &str) -> Result<Vec<Token>, EvalError> {
     // Vec used to store digits for parsing numbers
     let mut num = String::new();
 
-    for c in expression.chars() {
+    for (i, c) in expression.chars().enumerate() {
         if !ALLOWED_CHARS.contains(c) {
+            dbg!(i, c, expression);
             return Err(EvalError::InvalidCharacter(c))
         }
 
@@ -245,7 +247,7 @@ mod tests {
 
     #[test]
     fn parse_parentheses_unclosed() {
-        let expression = "123 * (456 + 789";
+        let expression = "123 * (456 + 789\n";
         let tokens = parse_expression(expression).unwrap();
 
         assert_eq!(
