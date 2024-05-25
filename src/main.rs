@@ -6,14 +6,18 @@
 use std::{io, io::Write};
 
 mod tokenize;
-mod expression;
+mod ast;
 
 fn main() -> io::Result<()> {
     let input = get_input("Enter the expression: ")?;
 
     let tokens = tokenize::parse_expression(&input);
 
-    dbg!(tokens);
+    dbg!(&tokens);
+
+    let ast = ast::get_ast(&tokens);
+
+    dbg!(ast.root);
 
     Ok(())
 }
