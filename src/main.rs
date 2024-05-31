@@ -25,7 +25,6 @@ fn main() -> io::Result<()> {
         match result {
             Ok(result) => println!("Your expression evaluated to: {}", result),
             Err(EvalError::InvalidExpression(_)) => println!("Invalid expression, please try again."),
-            Err(EvalError::InvalidCharacter(c)) => println!("Invalid character: {:#?}", c),
             Err(EvalError::UnknownKeyword(k)) => println!("Unknown keyword: {:#?}", k),
             Err(EvalError::NoFunctionArguments(k)) => println!("No function variablesfor function: {:#?}", k),
             Err(EvalError::InvalidArgumentCount { expected, got }) => println!("Invalid argument count, expected: {:#?}, got: {:#?}", expected, got),
